@@ -1,0 +1,54 @@
+version: '3.3'
+services:
+  couchdb:
+    image: 'couchdb:3.2.2'
+    container_name: couchdb_3.2.2
+    hostname: couchdb
+    ports:
+      - '5984:5984'
+    env_file: .env
+    volumes:
+      - './couchdb/data:/opt/couchdb/data'
+      - './couchdb/etc:/opt/couchdb/etc/local.d'
+  postgres:
+    image: 'postgres:14.2'
+    container_name: postgresql_14.2
+    hostname: postgresql
+    env_file: .env
+    volumes:
+      - './postgres/data:/var/lib/postgresql/data'
+    ports:
+      - '5432:5432'
+  adminer:
+    image: 'adminer:latest'
+    hostname: adminersql
+    depends_on:
+      - postgres
+    ports:
+      - '8432:8080'
+  dremio-oss:
+    image: 'dremio/dremio-oss:21.1'
+    container_name: dremio-oss_21.1
+    hostname: dremio
+    ports:
+      - '9047:9047'
+      - '45678:45678'
+      - '31010:31010'
+    volumes:
+      - './dremio/data:/opt/dremio/data'
+  superset:
+    image: 'datastemalux/superset-dremio:latest'
+    container_name: superset-dremio
+    hostname: supersetdremio
+    ports:
+      - '8088:8088'
+    volumes: []
+  couch-export:
+    image: 'datastemalux/couch-export:1.0.0'
+    container_name: couch-export_1.0.0
+    hostname: couchexport
+    depends_on:
+      - postgres
+      - couchdb
+    volumes:
+      - './couch-export:/app/config'

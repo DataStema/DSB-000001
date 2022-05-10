@@ -1,0 +1,10 @@
+{
+    "couchDB":{
+        "url":"http://admin:couchdb@couchdb:5984",
+        "dbname": "destinationpsql"
+    },
+    "postgresql":{
+        "uri":"postgresql://postgres:postgres@postgresql:5432/postgres",
+        "table":"destinationpsql"
+    }
+}
