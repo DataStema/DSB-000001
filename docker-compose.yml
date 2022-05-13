@@ -19,13 +19,6 @@ services:
       - './postgres/data:/var/lib/postgresql/data'
     ports:
       - '5432:5432'
-  adminer:
-    image: 'adminer:latest'
-    hostname: adminersql
-    depends_on:
-      - postgres
-    ports:
-      - '8432:8080'
   dremio-oss:
     image: 'dremio/dremio-oss:21.1'
     container_name: dremio-oss_21.1

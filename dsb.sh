@@ -14,45 +14,67 @@
 #
 # @company: DataStema Sarl
 # @date: 10.05.2022
-# @version: 1.0.0
+# @version: 2.0.0
 # @author: dragos.stoica@datastema.io
 #----------------------------------------------------------------------------
 
 source .env
 
-echo $COUCHDB_USER
-
 # display usage and help
 usage(){
-	echo "Usage:"
-	echo "-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~"
-	echo "$0 setup"
-	echo "$0 deploy"
-	echo "$0 run"
-    echo "$0 stop"
-	echo "$0 cleanup"
-	echo "-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~"
+    local __usage="Usage:
+    -~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~
+    $0 setup
+        setup each container
+    $0 deploy
+        deploy any configuration before run
+    $0 run
+        main execution loops, launch Data Solution Blueprint
+    $0 stop
+        stop execution loop
+    $0 cleanup
+        clean all folders and data
+    -~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~"
+    echo -e "$__usage"
 	return
 }
 
 # setup function
 setup(){
-#create docker folders
-    if [ ! -d "./couchdb/data" ]; then
-        mkdir -m 0777 -p ./couchdb/data
-    fi
-    if [ ! -d "./couchdb/etc" ]; then
-        mkdir -m 0777 -p ./couchdb/etc
-    fi
-    if [ ! -d "./dremio/data" ]; then
-        mkdir -m 0777 -p ./dremio/data
-    fi
-    if [ ! -d "./postgres/data" ]; then
-        mkdir -m 0777 -p ./postgres/data
-    fi
-# setup CouchDB
+    echo "Setup stage"
+    #create docker folders
+    local FOLDERS=( "./couchdb" "./couchdb/data" "./couchdb/etc" "./dremio" "./dremio/data" "./postgres" "./postgres/data" )
+    for i in "${FOLDERS[@]}"
+    do
+	    if [ ! -d "$i" ]; then
+        mkdir -m 0777 -p $i
+        fi
+    done
 
-# setup Superset
+    # setup CouchDB
+    docker-compose up -d couchdb superset
+    COUCH_URL=http://$COUCHDB_USER:$COUCHDB_PASSWORD@couchdb.localhost:5984
+    sleep 10
+
+    curl -X PUT $COUCH_URL/_users
+    curl -X PUT $COUCH_URL/_replicator
+    curl -X PUT $COUCH_URL/_global_changes
+
+    # setup Superset
+    docker exec -it superset-dremio superset fab create-admin \
+                --username $SUPERSET_USER \
+                --firstname DataStema \
+                --lastname Admin \
+                --email contact@datastema.io \
+                --password $SUPERSET_PASSWORD
+    docker exec -it superset-dremio superset db upgrade
+    # This step is optional - it populates Apache Superset with examples
+    #docker exec -it superset-dremio superset load_examples
+    docker exec -it superset-dremio superset init
+    
+    sleep 10
+    docker-compose stop couchdb superset
+    echo "DONE >>> Setup stage"
 }
 
 # deploy function
@@ -63,29 +85,43 @@ deploy(){
 
 # clean up all folders
 cleanup(){
-    #delete docker folders
     echo "Cleanup stage"
-    if [ -d "./couchdb" ]; then
-        sudo rm -fr ./couchdb
-    fi
-    if [ -d "./dremio" ]; then
-        sudo rm -fr ./dremio
-    fi
-    if [ -d "./postgres" ]; then
-        sudo rm -fr ./postgres
-    fi
+    #delete docker folders
+    local FOLDERS=("./couchdb" "./dremio" "./postgres")
+    for i in "${FOLDERS[@]}"
+    do
+	    if [ -d "$i" ]; then
+            sudo rm -fr $i
+        fi
+    done
 
     echo "DONE >>> Cleanup stage"
 }
 
 # run function
 run(){
-    echo 'CouchDB has successfuly started on http://couchdb.localhost:5894/'
-    echo 'PostgreSQL has successfuly started on postgresql.localhost:5432'
-    echo 'Dremio has successfuly started on http://dremio.localhost:5894/'
-    echo 'Superset has successfuly started on http://couchdb.localhost:5894/'
+    echo "Run stage"
+    docker-compose up -d
+
+    echo "CouchDB has successfuly started on http://couchdb.localhost:5984/_utils"
+    echo "        user: $COUCHDB_USER | password: $COUCHDB_PASSWORD"
+    echo "PostgreSQL has successfuly started on postgresql.localhost:5432"
+    echo "        user: $POSTGRES_USER | password: $POSTGRES_PASSWORD"
+    echo "Dremio has successfuly started on http://dremio.localhost:9047/"
+    echo "        create your own user"
+    echo "Superset has successfuly started on http://supersetdremio.localhost:8088/"
+    echo "        user: $SUPERSET_USER | password: $SUPERSET_PASSWORD"
+    echo -e "\n\nDONE >>> Run stage"
 }
 
+# stop function
+stop(){
+    echo "Stop stage"
+    docker-compose stop
+    echo "DONE >>> Stop stage"
+}
+
+##############################################################################
 # main script
 
 # process command line parameters
@@ -108,4 +144,5 @@ esac
 
 exit 0
 
-#EOF
+# end of main script
+##############################################################################
