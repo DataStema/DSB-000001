@@ -37,8 +37,8 @@ services:
       - '8088:8088'
     volumes: []
   couch-export:
-    image: 'datastemalux/couch-export:1.0.0'
-    container_name: couch-export_1.0.0
+    image: 'datastemalux/couch-export:2.0.0'
+    container_name: couch-export_2.0.0
     hostname: couchexport
     depends_on:
       - postgres
