@@ -1,6 +1,9 @@
 # DSB-000001
 Data Solution Blueprints &copy; - Serial number 000 001
 
+![DSB 000 001](DSB000001.png?raw=true "Data Solution Blueprint 000 001")
+
+
 ## Components
 - CouchDB
 - PostgreSQL
