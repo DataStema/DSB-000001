@@ -1,0 +1,101 @@
+name: dsb-000001
+
+# The build section defines how to build the images of your development environment
+# More info: https://www.okteto.com/docs/reference/manifest/#build
+build:
+
+  # You can use the following env vars to refer to this image in your deploy commands:
+  #  - OKTETO_BUILD_COUCH-EXPORT_REGISTRY: image registry
+  #  - OKTETO_BUILD_COUCH-EXPORT_REPOSITORY: image repo
+  #  - OKTETO_BUILD_COUCH-EXPORT_IMAGE: image name
+  #  - OKTETO_BUILD_COUCH-EXPORT_TAG: image tag
+  couch-export: ""
+
+  # You can use the following env vars to refer to this image in your deploy commands:
+  #  - OKTETO_BUILD_COUCHDB_REGISTRY: image registry
+  #  - OKTETO_BUILD_COUCHDB_REPOSITORY: image repo
+  #  - OKTETO_BUILD_COUCHDB_IMAGE: image name
+  #  - OKTETO_BUILD_COUCHDB_TAG: image tag
+  couchdb: ""
+
+  # You can use the following env vars to refer to this image in your deploy commands:
+  #  - OKTETO_BUILD_DREMIO-OSS_REGISTRY: image registry
+  #  - OKTETO_BUILD_DREMIO-OSS_REPOSITORY: image repo
+  #  - OKTETO_BUILD_DREMIO-OSS_IMAGE: image name
+  #  - OKTETO_BUILD_DREMIO-OSS_TAG: image tag
+  dremio-oss: ""
+
+  # You can use the following env vars to refer to this image in your deploy commands:
+  #  - OKTETO_BUILD_POSTGRES_REGISTRY: image registry
+  #  - OKTETO_BUILD_POSTGRES_REPOSITORY: image repo
+  #  - OKTETO_BUILD_POSTGRES_IMAGE: image name
+  #  - OKTETO_BUILD_POSTGRES_TAG: image tag
+  postgres: ""
+
+  # You can use the following env vars to refer to this image in your deploy commands:
+  #  - OKTETO_BUILD__REGISTRY: image registry
+  #  - OKTETO_BUILD__REPOSITORY: image repo
+  #  - OKTETO_BUILD__IMAGE: image name
+  #  - OKTETO_BUILD__TAG: image tag
+# The deploy section defines how to deploy your development environment
+# More info: https://www.okteto.com/docs/reference/manifest/#deploy
+deploy:
+  compose:
+    file: docker-compose.yml
+    services:
+      - couchdb
+      - postgres
+      - dremio-oss
+      - superset
+      - couch-export
+
+# The dependencies section defines other git repositories to be deployed as part of your development environment
+# More info: https://www.okteto.com/docs/reference/manifest/#dependencies
+# dependencies:
+#   - https://github.com/okteto/sample
+
+
+# The dev section defines how to activate a development container
+# More info: https://www.okteto.com/docs/reference/manifest/#dev
+dev:
+  couch-export:
+    image: okteto/dev:latest
+    command: bash
+    workdir: /app
+    sync:
+      - couch-export:/app
+  couchdb:
+    image: okteto/dev:latest
+    command: bash
+    workdir: /usr/src/app
+    sync:
+      - .:/usr/src/app
+    forward:
+      - 5984:5984
+      - 9100:9100
+      - 4369:4369
+  dremio-oss:
+    image: okteto/dev:latest
+    command: bash
+    workdir: /opt/dremio
+    sync:
+      - .:/opt/dremio
+    forward:
+      - 45678:45678
+      - 31010:31010
+      - 9047:9047
+  postgres:
+    image: okteto/dev:latest
+    command: bash
+    workdir: /usr/src/app
+    sync:
+      - .:/usr/src/app
+    forward:
+      - 5432:5432
+  superset:
+    image: okteto/dev:latest
+    command: bash
+    workdir: /app
+    sync:
+      - .:/app
+
